@@ -1,0 +1,42 @@
+---
+
+### 🐍 2. `run_benchmark.py`（1,000万件ベンチマーク用 Python コード）
+
+```python
+import numpy as np
+import time
+
+def cns_n_benchmark_10m():
+    print("=== CNS-N Ultra-Fast 10-Million Scale Benchmark ===")
+    digit_scales = [10, 50, 100, 500, 1000]
+    samples_per_scale = 2_000_000
+    
+    total_samples = len(digit_scales) * samples_per_scale
+    total_time = 0.0
+    
+    for n_digits in digit_scales:
+        first_digits = np.random.randint(1, 10, size=(samples_per_scale, 1))
+        other_digits = np.random.randint(0, 10, size=(samples_per_scale, n_digits - 1))
+        digits = np.hstack([first_digits, other_digits])
+        
+        t0 = time.perf_counter()
+        h_z = np.sum(digits ** 2, axis=1)
+        upper_limit = 81 * n_digits
+        is_bounded = h_z <= upper_limit
+        t1 = time.perf_counter()
+        
+        elapsed = t1 - t0
+        total_time += elapsed
+        per_sample_us = (elapsed / samples_per_scale) * 1e6
+        
+        reduction = n_digits - np.log10(upper_limit)
+        
+        print(f"N = {n_digits:4d} digits | Samples: {samples_per_scale:,} | "
+              f"Time: {elapsed:.3f} s | Per sample: {per_sample_us:.4f} µs | "
+              f"Reduction: {reduction:.1f} orders")
+              
+    print(f"\nTOTAL: {total_samples:,} samples processed in {total_time:.3f} seconds!")
+    print(f"Average throughput: {total_samples / total_time:,.0f} ops/sec")
+
+if __name__ == "__main__":
+    cns_n_benchmark_10m()
